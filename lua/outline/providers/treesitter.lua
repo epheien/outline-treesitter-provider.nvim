@@ -6,6 +6,7 @@ local M = {
 
 local ft_to_parser_name = {
   help = "vimdoc",
+  man = 'man', -- hack
 }
 
 ---@return boolean, table?
@@ -14,6 +15,9 @@ function M.supports_buffer(bufnr)
   local ft = vim.api.nvim_get_option_value("filetype", { buf = bufnr })
   local parser_name = ft_to_parser_name[ft]
   if parser_name == nil then return false end
+  if ft == 'man' then
+    return true, { ft = ft, buf = bufnr, lang = parser_name }
+  end
   local ok, parser = pcall(vim.treesitter.get_parser, bufnr, parser_name)
   if not ok then return false end
   return true, { parser = parser, ft = ft, buf = bufnr, lang = parser_name }
