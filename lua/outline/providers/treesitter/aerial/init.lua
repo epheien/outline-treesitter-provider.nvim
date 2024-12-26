@@ -1,7 +1,5 @@
-local backends = require("aerial.backends")
-local config = require("aerial.config")
-local helpers = require("aerial.backends.treesitter.helpers")
-local util = require("aerial.backends.util")
+local helpers = require("outline.providers.treesitter.aerial.helpers")
+local to_outline_range = helpers.to_outline_range
 
 local M = {}
 
@@ -27,24 +25,17 @@ end
 
 M.fetch_symbols_sync = function(bufnr)
   bufnr = bufnr or 0
-  local extensions = require("aerial.backends.treesitter.extensions")
+  local extensions = require("outline.providers.treesitter.aerial.extensions")
   local get_node_text = vim.treesitter.get_node_text
-  local include_kind = config.get_filter_kind_map(bufnr)
   local parser = helpers.get_parser(bufnr)
   local items = {}
   if not parser then
-    backends.set_symbols(bufnr, items, { backend_name = "treesitter", lang = "unknown" })
     return
   end
   local lang = parser:lang()
   local syntax_tree = parser:parse()[1]
   local query = helpers.get_query(lang)
   if not query or not syntax_tree then
-    backends.set_symbols(
-      bufnr,
-      items,
-      { backend_name = "treesitter", lang = lang, syntax_tree = syntax_tree }
-    )
     return
   end
   -- This will track a loose hierarchy of recent node+items.
@@ -123,6 +114,7 @@ M.fetch_symbols_sync = function(bufnr)
     else
       scope = match.scope
     end
+    local outline_range = to_outline_range(selection_range)
     ---@type aerial.Symbol
     local item = {
       kind = kind,
@@ -131,20 +123,13 @@ M.fetch_symbols_sync = function(bufnr)
       parent = parent_item,
       selection_range = selection_range,
       scope = scope,
+      range = outline_range,
+      selectionRange = outline_range, -- FIXME: patch outline.nvim to ignore selectionRange
     }
     for k, v in pairs(range) do
       item[k] = v
     end
-    if ext.postprocess(bufnr, item, match) == false or not include_kind[item.kind] then
-      goto continue
-    end
-    local ctx = {
-      backend_name = "treesitter",
-      lang = lang,
-      syntax_tree = syntax_tree,
-      match = match,
-    }
-    if config.post_parse_symbol and config.post_parse_symbol(bufnr, item, ctx) == false then
+    if ext.postprocess(bufnr, item, match) == false then
       goto continue
     end
     if item.parent then
@@ -160,21 +145,21 @@ M.fetch_symbols_sync = function(bufnr)
     ::continue::
   end
   ext.postprocess_symbols(bufnr, items)
-  backends.set_symbols(
-    bufnr,
-    items,
-    { backend_name = "treesitter", lang = lang, syntax_tree = syntax_tree }
-  )
+  return items
 end
 
-M.fetch_symbols = M.fetch_symbols_sync
-
-M.attach = function(bufnr)
-  util.add_change_watcher(bufnr, "treesitter")
+function M.supports_buffer(bufnr)
+  local ok, msg = M.is_supported(bufnr) ---@diagnostic disable-line
+  --if not ok then vim.notify('outline.providers.treesitter: ' .. msg, vim.log.levels.WARN) end
+  return ok, { buf = bufnr }
 end
 
-M.detach = function(bufnr)
-  util.remove_change_watcher(bufnr, "treesitter")
+---@param on_symbols fun(symbols?:outline.ProviderSymbol[], opts?:table)
+---@param opts table?
+---@param info table? Must be the table received from `supports_buffer`
+function M.request_symbols(on_symbols, opts, info)
+  local symbols = M.fetch_symbols_sync(info.buf) ---@diagnostic disable-line
+  on_symbols(symbols, opts)
 end
 
 return M

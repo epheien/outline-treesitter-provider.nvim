@@ -1,4 +1,6 @@
-local helpers = require("aerial.backends.treesitter.helpers")
+---@diagnostic disable: unused-local
+local helpers = require("outline.providers.treesitter.aerial.helpers")
+local to_outline_range = helpers.to_outline_range
 local M = {}
 
 ---@param match? table
@@ -52,6 +54,8 @@ local function set_end_range(bufnr, items, last_line)
     if prev then
       prev.end_lnum = item.lnum - 1
       prev.end_col = get_line_len(bufnr, prev.end_lnum)
+      prev.range['end'].line = prev.end_lnum - 1
+      prev.range['end'].character = prev.end_col
       set_end_range(bufnr, prev.children, prev.end_lnum)
     end
     prev = item
@@ -59,6 +63,8 @@ local function set_end_range(bufnr, items, last_line)
   if prev then
     prev.end_lnum = last_line
     prev.end_col = get_line_len(bufnr, last_line)
+    prev.range['end'].line = prev.end_lnum - 1
+    prev.range['end'].character = prev.end_col
     set_end_range(bufnr, prev.children, last_line)
   end
 end
@@ -129,6 +135,7 @@ M.markdown = {
       item.name = item.name:sub(prefix:len() + 1)
       if item.selection_range then
         item.selection_range.col = item.selection_range.col + prefix:len()
+        item.range = to_outline_range(item.selection_range)
       end
     end
     return true
@@ -188,6 +195,7 @@ M.help = {
         if item.selection_range then
           item.selection_range.lnum = row + 1
           item.selection_range.col = col
+          item.range = to_outline_range(item.selection_range)
         end
       end
       item.name = table.concat(pieces, " ")
@@ -309,6 +317,7 @@ local function c_postprocess(bufnr, item, match)
     item.name = get_node_text(root, bufnr) or "<parse error>"
     if not item.selection_range then
       item.selection_range = helpers.range_from_nodes(root, root)
+      item.range = to_outline_range(item.selection_range)
     end
   end
 end
@@ -327,9 +336,11 @@ M.cpp = {
       parent = parent:parent()
     end
     if parent then
-      for k, v in pairs(helpers.range_from_nodes(parent, parent)) do
+      local range = helpers.range_from_nodes(parent, parent)
+      for k, v in pairs(range) do
         item[k] = v
       end
+      item.range = to_outline_range(range)
     end
   end,
 }

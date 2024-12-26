@@ -1,6 +1,18 @@
 local M = {}
 local query_cache = {}
 
+--- convert aerial range to outline range
+---@param aerial_range aerial.Range
+---@return table|nil
+function M.to_outline_range(aerial_range)
+  -- 如果 aerial_range 不可用, 那表示使用 postprocess 扩展去填充, 例如 c
+  if not aerial_range then return nil end
+  return {
+    start = { line = aerial_range.lnum - 1, character = aerial_range.col },
+    ['end'] = { line = aerial_range.end_lnum - 1, character = aerial_range.end_col, },
+  }
+end
+
 --@note Clear query cache, forcing reload
 M.clear_query_cache = function()
   query_cache = {}
