@@ -4,7 +4,8 @@ local Symbol_root = utils.Symbol_root
 
 local M = {}
 
-function M.get_symbols(parser, buf)
+-- from oskarrrrrrr/symbols.nvim
+local function vimdoc_get_symbols(parser, buf)
   local rootNode = parser:parse()[1]:root()
   local queryString = [[
         [
@@ -37,6 +38,7 @@ function M.get_symbols(parser, buf)
         current = current.parent
         assert(current ~= nil)
       end
+      ---@type Symbol
       local new = {
         kind_name = kind,
         kind = utils.to_kind(kind),
@@ -68,7 +70,12 @@ function M.get_symbols(parser, buf)
   local line_count = vim.api.nvim_buf_line_count(buf)
   fix_range_ends(root, line_count)
 
-  return true, root.children
+  return true, root
+end
+
+function M.get_symbols(parser, buf)
+  local _, root = vimdoc_get_symbols(parser, buf)
+  return root.children
 end
 
 return M

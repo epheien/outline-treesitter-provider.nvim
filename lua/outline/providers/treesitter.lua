@@ -25,7 +25,7 @@ end
 function M.request_symbols(on_symbols, opts, info)
   local ok, mod = pcall(require, 'outline.providers.treesitter.filetypes.' .. info.lang)
   assert(ok, "Failed to get `get_symbols` for ft: " .. tostring(info.ft))
-  local _, symbols = mod.get_symbols(info.parser, info.buf)
+  local symbols = mod.get_symbols(info.parser, info.buf)
   assert(vim.islist(symbols or {}), 'Internal error: symbols is not list!')
   on_symbols(symbols, opts)
 end
