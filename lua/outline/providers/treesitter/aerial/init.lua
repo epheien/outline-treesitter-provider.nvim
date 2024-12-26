@@ -124,7 +124,6 @@ M.fetch_symbols_sync = function(bufnr)
       selection_range = selection_range,
       scope = scope,
       range = outline_range,
-      selectionRange = outline_range, -- FIXME: patch outline.nvim to ignore selectionRange
     }
     for k, v in pairs(range) do
       item[k] = v
