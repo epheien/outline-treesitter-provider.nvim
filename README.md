@@ -1,4 +1,7 @@
-# An outline.nvim external provider for universal treesitter
+# An outline.nvim external provider for treesitter
+
+Port treesitter of [symbols.nvim](https://github.com/oskarrrrrrr/symbols.nvim) and
+[aerial.nvim](https://github.com/stevearc/aerial.nvim) to [outline.nvim](https://github.com/hedyhli/outline.nvim).
 
 A Lazy.nvim example to use this provider.
 
@@ -18,16 +21,6 @@ A Lazy.nvim example to use this provider.
     }
   }
 ```
-
-## Configuration
-
-### Default options
-```lua
-  {
-  }
-```
-
-Please read the source code to obtain the latest default configuration.
 
 ## NOTES
 
