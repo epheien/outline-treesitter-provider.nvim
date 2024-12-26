@@ -8,7 +8,6 @@ local M = {
 
 local ft_to_parser_name = {
   help = "vimdoc",
-  --man = 'man', -- hack
 }
 
 ---@return boolean, table?
@@ -20,9 +19,6 @@ function M.supports_buffer(bufnr)
   if parser_name == nil then
     return aerial.supports_buffer(bufnr)
   end
-  --if ft == 'man' then
-  --  return true, { ft = ft, buf = bufnr, lang = parser_name }
-  --end
   local ok, parser = pcall(vim.treesitter.get_parser, bufnr, parser_name)
   if not ok then return false end
   return true, { parser = parser, ft = ft, buf = bufnr, lang = parser_name }
