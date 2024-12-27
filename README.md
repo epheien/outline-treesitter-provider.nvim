@@ -13,6 +13,14 @@ A Lazy.nvim example to use this provider.
         providers = {
           priority = { 'lsp', 'coc', 'markdown', 'norg', 'treesitter' },
         },
+        view = {
+          -- Support help (vimdoc) when run `:help`, replace `gO`.
+          filter = function(buf)
+            local ft = vim.bo[buf].filetype
+            if ft == 'qf' then return false end
+            return vim.bo[buf].buflisted or ft == 'help'
+          end,
+        },
       })
     end,
     event = "VeryLazy",
