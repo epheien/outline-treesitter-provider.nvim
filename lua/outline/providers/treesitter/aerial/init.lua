@@ -10,9 +10,6 @@ local M = {}
 -- end (optional): The location of the end of this symbol (default @start)
 
 M.is_supported = function(bufnr)
-  if vim.fn.has("nvim-0.9") == 0 and not pcall(require, "nvim-treesitter") then
-    return false, "Neovim <0.9 requires nvim-treesitter"
-  end
   local lang = helpers.get_buf_lang(bufnr)
   if not helpers.has_parser(lang) then
     return false, string.format("No treesitter parser for %s", lang)
@@ -42,8 +39,9 @@ M.fetch_symbols_sync = function(bufnr)
   -- It is used to determine node parents for the tree structure.
   local stack = {}
   local ext = extensions[lang]
-  ---@diagnostic disable-next-line: missing-parameter
-  for _, matches, metadata in query:iter_matches(syntax_tree:root(), bufnr) do
+  for _, matches, metadata in
+    query:iter_matches(syntax_tree:root(), bufnr, nil, nil, { all = false })
+  do
     ---@note mimic nvim-treesitter's query.iter_group_results return values:
     --       {
     --         kind = "Method",
@@ -120,14 +118,15 @@ M.fetch_symbols_sync = function(bufnr)
       kind = kind,
       name = name,
       level = level,
+      lnum = range.lnum,
+      end_lnum = range.end_lnum,
+      col = range.col,
+      end_col = range.end_col,
       parent = parent_item,
       selection_range = selection_range,
       scope = scope,
       range = outline_range,
     }
-    for k, v in pairs(range) do
-      item[k] = v
-    end
     if ext.postprocess(bufnr, item, match) == false then
       goto continue
     end

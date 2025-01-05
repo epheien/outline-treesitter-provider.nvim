@@ -351,6 +351,18 @@ M.rst = {
   end,
 }
 
+M.starlark = {
+  postprocess = function(bufnr, item, match)
+    if item.kind == "Function" then
+      local rule_kind = node_from_match(match, "rule_kind")
+      local rule_name = assert(node_from_match(match, "rule_name"))
+      local name_text = get_node_text(rule_name, bufnr) or "<parse error>"
+      local kind_text = get_node_text(rule_kind, bufnr) or "<parse error>"
+      item.name = string.format("%s > %s", name_text, kind_text)
+    end
+  end,
+}
+
 M.typescript = {
   ---@note Additionally processes the following captures:
   ---      `@method`, `@string`, and `@modifier` - replaces name with "@method[.@modifier] @string"
@@ -393,6 +405,15 @@ M.latex = {
 -- tsx needs the same transformations as typescript for now.
 -- This may not always be the case.
 M.tsx = M.typescript
+
+M.zig = {
+  postprocess = function(bufnr, item, match)
+    local node = assert(node_from_match(match, "symbol"))
+    if node:type() == "test_declaration" then
+      item.name = "test " .. item.name
+    end
+  end,
+}
 
 for _, lang in pairs(M) do
   setmetatable(lang, { __index = default_methods })
