@@ -40,7 +40,7 @@ M.fetch_symbols_sync = function(bufnr)
   local stack = {}
   local ext = extensions[lang]
   for _, matches, metadata in
-    query:iter_matches(syntax_tree:root(), bufnr, nil, nil, { all = false })
+    query:iter_matches(syntax_tree:root(), bufnr, nil, nil)
   do
     ---@note mimic nvim-treesitter's query.iter_group_results return values:
     --       {
@@ -57,7 +57,9 @@ M.fetch_symbols_sync = function(bufnr)
     --       }
     --- Matches can overlap. The last match wins.
     local match = vim.tbl_extend("force", {}, metadata)
-    for id, node in pairs(matches) do
+    for id, nodes in pairs(matches) do
+      -- preserve the old iter_matches({all = false}) behavior
+      local node = nodes[#nodes]
       -- iter_group_results prefers `#set!` metadata, keeping the behaviour
       match = vim.tbl_extend("keep", match, {
         [query.captures[id]] = {
